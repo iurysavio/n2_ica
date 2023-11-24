@@ -1,2 +1,4 @@
 # virtual env
 .env
+# base de dados
+src/data
