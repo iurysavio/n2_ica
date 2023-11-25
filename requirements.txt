@@ -3,4 +3,4 @@ opencv-python
 pydicom
 ipykernel
 matplotlib
-glob
+glob2
