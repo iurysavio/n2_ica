@@ -1,4 +1,6 @@
 # virtual env
 .env
 # base de dados
-src/data
+src/raw_data
+src/segmented_data
+src/old
