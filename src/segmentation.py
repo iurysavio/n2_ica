@@ -48,7 +48,7 @@ def brain(img):
     cv2.normalize(img, img_norm, 0, 255, cv2.NORM_MINMAX)
     img_norm = cv2.convertScaleAbs(img_norm)
 
-    ret, img_bin = cv2.threshold(img_norm, 230, 255, cv2.THRESH_BINARY)
+    ret, img_bin = cv2.threshold(img_norm, 240, 255, cv2.THRESH_BINARY)
     img_bin = maior_comp(img_bin)
 
 
@@ -75,16 +75,26 @@ def brain(img):
     # img_max_2[labels != largecomponent2] = 255 
 
     kernel = np.ones((3, 3), np.uint8)
+    kernel1  = np.ones((5, 5), np.uint8)
+    kernel2 =np.asarray([[0,1,1,1,1,1,0],
+                             [1,1,1,1,1,1,1],
+                             [1,1,1,1,1,1,1],
+                             [1,1,1,1,1,1,1],
+                             [1,1,1,1,1,1,1],
+                             [1,1,1,1,1,1,1],
+                             [0,1,1,1,1,1,0]], np.uint8)
+
     
+
     # img_bin = cv2.erode(img_bin, kernel, iterations=1)
-    img_bin = cv2.dilate(img_bin, kernel, iterations = 2)
-    img_bin = cv2.erode(img_bin, kernel, iterations= 2)
+    img_bin = cv2.dilate(img_bin, kernel2, iterations = 5)
+    img_bin = cv2.erode(img_bin, kernel2, iterations= 2)
 
-    img_bin = cv2.dilate(img_bin, kernel, iterations = 8)
-    img_bin = cv2.erode(img_bin, kernel, iterations= 2)
+    # img_bin = cv2.dilate(img_bin, kernel, iterations = 8)
+    # img_bin = cv2.erode(img_bin, kernel, iterations= 3)
 
-    img_bin = cv2.dilate(img_bin, kernel, iterations = 5)
-    img_bin = cv2.erode(img_bin, kernel, iterations= 2)
+    # img_bin = cv2.dilate(img_bin, kernel, iterations = 8)
+    # img_bin = cv2.erode(img_bin, kernel, iterations= 2)
 
     # cv.imshow(' 3 - Apenas o osso do cranio', img_bin)
 
@@ -96,8 +106,8 @@ def brain(img):
     dif = dif * 255
     ret, thresh = cv2.threshold(dif, 0, 255, cv2.THRESH_BINARY)
     thresh = cv2.dilate(thresh, kernel, iterations=2)
-    thresh = cv2.erode(thresh, kernel, iterations=2)
-
+    thresh = cv2.erode(thresh, kernel, iterations=4)
+    
     # cv.imshow(' 5 - Thresh diferença', thresh)
 
 
@@ -111,6 +121,17 @@ def brain(img):
     #################################
     cv2.normalize(thresh, img_norm_2, 0, 255, cv2.NORM_MINMAX)
     img_norm_2 = cv2.convertScaleAbs(img_norm_2)
+
+    kernel3 = np.asarray([[0,0,0,0,0,0,0],
+                      [0,0,0,0,0,0,0],
+                      [0,0,0,0,0,0,0],
+                      [1,1,1,1,1,1,1],
+                      [0,0,0,0,0,0,0],
+                      [0,0,0,0,0,0,0],
+                      [0,0,0,0,0,0,0]], np.uint8)
+    
+    img_norm_2 = cv2.dilate(img_norm_2, kernel3, iterations=2)
+
     if np.mean(img_norm_2) > 0.0:
         #########################################################
         connectivity = 4
@@ -160,6 +181,7 @@ def brain(img):
 
         new_image = (dif - (img_norm_3))
         new_image[new_image < 0] = 0
+        new_image[new_image > 80] = 0
 
         # cv.imshow(' 7 - Output image', new_image)
 
