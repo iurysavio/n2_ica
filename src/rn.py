@@ -1,75 +1,42 @@
+import os
 import numpy as np
-import numpy as np
-from tensorflow.keras.preprocessing.image import ImageDataGenerator  # Adicione esta linha
+import pandas as pd
+from tensorflow.keras.preprocessing import image
+from tensorflow.keras.applications import VGG16
+from tensorflow.keras.applications.vgg16 import preprocess_input
 
-# Resto do seu código...
+def extract_features(img_path, model):
+    img = image.load_img(img_path, target_size=(224, 224))
+    img_array = image.img_to_array(img)
+    img_array = np.expand_dims(img_array, axis=0)
+    img_array = preprocess_input(img_array)
 
+    features = model.predict(img_array)
+    return features.flatten()
 
-# Diretório contendo suas imagens
-data_dir = '/home/iza/Área de Trabalho/n2_ica/imag'
-
-datagen = ImageDataGenerator(rescale=1./255, validation_split=0.2)
-
-train_generator = datagen.flow_from_directory(
-    data_dir,
-    target_size=(224, 224),
-    batch_size=32,
-    class_mode='categorical',
-    subset='training',
-    shuffle=False
-)
-
-class_counts = np.sum(train_generator.labels, axis=0, dtype=np.float32)
-total_samples = np.sum(class_counts)
-
-class_weights = {i: total_samples / (2.0 * class_counts[i]) for i in range(len(class_counts))}
-
-# Treino (80%) e validação (20%)
-train_generator = datagen.flow_from_directory(
-    data_dir,
-    target_size=(224, 224),
-    batch_size=32,
-    class_mode='categorical',
-    subset='training',
-    class_weights=class_weights,
-    shuffle=True 
-)
-
-validation_generator = datagen.flow_from_directory(
-    data_dir,
-    target_size=(224, 224),
-    batch_size=32,
-    class_mode='categorical', 
-    subset='validation'
-)
-
-# CNN pré-treinada VGG16
 base_model = VGG16(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
 
-# adaptação do modelo para duas classes
-x = base_model.output
-x = GlobalAveragePooling2D()(x)
-x = Dense(1024, activation='relu')(x)
-predictions = Dense(2, activation='softmax')(x)
+data_dir = '/home/iza/Área de Trabalho/n2_ica/imag'
 
-model = Model(inputs=base_model.input, outputs=predictions)
+features_list = []
+labels_list = []
 
-# congelamento das camadas pré-treinadas
-for layer in base_model.layers:
-    layer.trainable = False
+classes = ['AVCH', 'normal']
+for class_name in classes:
+    class_dir = os.path.join(data_dir, class_name)
+    
+    for img_name in os.listdir(class_dir):
+        img_path = os.path.join(class_dir, img_name)
+        
+        # extrair características e adicionar à lista
+        features = extract_features(img_path, base_model)
+        features_list.append(features)
+        labels_list.append(class_name)
 
-# compilação do modelo
-model.compile(optimizer=Adam(), loss='categorical_crossentropy', metrics=['accuracy'])
+features_array = np.array(features_list)
+labels_array = np.array(labels_list)
 
-# treinamento do modelo
-model.fit(train_generator, epochs=5, validation_data=validation_generator)
+df = pd.DataFrame(features_array)
+df['label'] = labels_array
 
-# adição de camadas de atenção
-attention_layer = Attention()([base_model.output, model.layers[-2].output])
-output_with_attention = tf.keras.layers.multiply([base_model.output, attention_layer])
-
-# criando um novo modelo com camadas de atenção
-model_with_attention = Model(inputs=base_model.input, outputs=output_with_attention)
-
-# visualize o modelo com camadas de atenção
-model_with_attention.summary()
+df.to_csv('features_and_labels.csv', index=False)
