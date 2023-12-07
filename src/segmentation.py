@@ -203,7 +203,7 @@ def get_imgs_path(root_folder):
                 dicom_paths.append(nomes)
     return dicom_paths               # append only the .dcm files
 
-def segment_imgs(root_folder, output_folder):
+'''def segment_imgs(root_folder, output_folder):
 
     # Recebe os paths das imagens de entrada
     input_file_path_array = get_imgs_path(root_folder)
@@ -262,17 +262,61 @@ def segment_imgs(root_folder, output_folder):
         
             # Salvando as imagens segmentadas
             # for path in file_path:
-            filename = file_path.split('\\')[-1]
-            cv2.imwrite(output_folder + '\\' + filename[:-3] + 'png', normalizeImage(brain_image))
+            filename = os.path.basename(file_path)
+            output_path = os.path.join(output_folder, f'{os.path.splitext(filename)[0]}.png')
+            print(f"Salvando imagem em: {output_path}")
+            cv2.imwrite(output_path, normalizeImage(brain_image))
         else: 
             continue
     return dicom_img_pixel_data_array, windowed_img_hu_array, segmented_img_hu_array
 
 def main():
-    root = r'raw_data\Hemorrágico'
-    output_data_folder = r'segmented_data\AVCH'
+    root = '/home/iza/Downloads/DATA_AVCH_SPLIT/Hemorrágico'
+    output_data_folder = '/home/iza/Área de Trabalho/n2_ica/imag'
     array_normal_original, array_normal_janelada, array_normal_segmentada = segment_imgs(root, output_data_folder)
 
 if __name__ == '__main__':
 
-    main()    
+    main()  
+'''
+def save_segmented_images(input_folder, output_folder):
+    # Obtém os caminhos das imagens de entrada
+    input_paths = get_imgs_path(input_folder)
+
+    for file_path in input_paths:
+        img_dicom = pdcm.dcmread(file_path)
+
+        # Obter os valores de pixel da imagem
+        pixel_array = img_dicom.pixel_array
+
+        # Definir os parâmetros de janelamento
+        window_center = img_dicom.WindowCenter
+        window_width = img_dicom.WindowWidth
+
+        if isinstance(window_width, pdcm.multival.MultiValue) or isinstance(window_center, pdcm.multival.MultiValue):
+            window_center = window_center[1]
+            window_width = window_width[1]
+
+        # Aplicar janelamento aos valores de pixel
+        windowed_image = pixel_array * img_dicom.RescaleSlope + img_dicom.RescaleIntercept
+        windowed_image = windowed_image.clip(min=window_center - window_width/2, max=window_center + window_width/2)
+
+        # Aplica a função de segmentação
+        segmented_image = brain(windowed_image)
+
+        if segmented_image is not None:
+            # Salvar a imagem segmentada
+            filename = os.path.basename(file_path)
+            output_path = os.path.join(output_folder, f'{os.path.splitext(filename)[0]}_segmented.png')
+            print(f"Salvando imagem segmentada em: {output_path}")
+            cv2.imwrite(output_path, normalizeImage(segmented_image))
+        else:
+            print(f"Não foi possível segmentar a imagem: {file_path}")
+
+def main():
+    input_folder = '/home/iza/Downloads/DATA_AVCH_SPLIT/Normal/Normal'
+    output_folder = '/home/iza/Área de Trabalho/n2_ica/imag_normal'
+    save_segmented_images(input_folder, output_folder)
+
+if __name__ == '__main__':
+    main()
