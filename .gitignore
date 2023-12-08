@@ -1,6 +1,13 @@
 # virtual env
-.env
+env
+../env/
+
+
 # base de dados
 src/raw_data
 src/segmented_data
 src/old
+imag
+imag/AVCH
+imag/normal
+features_and_labels.csv

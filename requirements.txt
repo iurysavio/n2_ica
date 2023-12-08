@@ -4,3 +4,7 @@ pydicom
 ipykernel
 matplotlib
 glob2
+tensorflow
+scipy
+keras
+scikit-learn
