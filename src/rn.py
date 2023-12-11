@@ -5,6 +5,7 @@ from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications import InceptionV3, InceptionResNetV2, ResNet50, VGG16
 from tensorflow.keras.applications.vgg16 import preprocess_input
 
+
 def extract_features(img_path, model):
     img = image.load_img(img_path, target_size=(224, 224))
     img_array = image.img_to_array(img)
@@ -15,13 +16,13 @@ def extract_features(img_path, model):
     return features.flatten()
 
 models = {
-    'InceptionV3': InceptionV3(weights='imagenet', include_top=False, input_shape=(224, 224, 3)),
-    'InceptionResNetV2': InceptionResNetV2(weights='imagenet', include_top=False, input_shape=(224, 224, 3)),
-    'ResNet50': ResNet50(weights='imagenet', include_top=False, input_shape=(224, 224, 3)),
-    'VGG16': VGG16(weights='imagenet', include_top=False, input_shape=(224, 224, 3)),
+    'InceptionV3': InceptionV3(weights='imagenet', include_top=False, input_shape=(512, 512, 3)),
+    'InceptionResNetV2': InceptionResNetV2(weights='imagenet', include_top=False, input_shape=(512, 512, 3)),
+    'ResNet50': ResNet50(weights='imagenet', include_top=False, input_shape=(512, 512, 3)),
+    'VGG16': VGG16(weights='imagenet', include_top=False, input_shape=(512, 512, 3)),
 }
 
-data_dir = '/home/iza/Área de Trabalho/n2_ica/imag'
+data_dir = '/home/iza/Área de Trabalho/DisciplicaICA/n2_ica/imag' 
 
 for model_name, model in models.items():
     features_list = []
