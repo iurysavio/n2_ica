@@ -28,7 +28,6 @@ def apply_pca(X_train, X_test, min_explained_variance=0.95):
 
 def train_and_evaluate_classifier(clf, param_dist, n_iter_search, X_train, X_test, y_train, y_test):
     if n_iter_search > 0:
-        # Ignorar avisos de convergência
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=ConvergenceWarning)
             random_search = RandomizedSearchCV(clf, param_distributions=param_dist, n_iter=n_iter_search, cv=cv, n_jobs=-1)
@@ -47,7 +46,7 @@ def train_and_evaluate_classifier(clf, param_dist, n_iter_search, X_train, X_tes
 
         return result
 
-# Melhores resultados
+# melhores resultados
 best_results = {}
 
 csv_files = ['features_and_labels_InceptionResNetV2.csv', 'features_and_labels_InceptionV3.csv',
@@ -108,10 +107,10 @@ for csv_file in csv_files:
 
         result = train_and_evaluate_classifier(clf, param_dist, n_iter_search, X_train_pca, X_test_pca, y_train, y_test)
 
-        # Armazenar os resultados para impressão
+        # armazenar os resultados para impressão
         best_results[(csv_file, clf_name)] = result
 
-# Imprimir os melhores resultados
+# imprimir os melhores resultados
 for key, result in sorted(best_results.items(), key=lambda x: x[0][0]):
     print(f'\nArquivo: {key[0]}, Classificador: {key[1]}')
     print(f'Melhores Parâmetros: {result["Melhores Parâmetros"]}')
