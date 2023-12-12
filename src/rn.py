@@ -5,9 +5,23 @@ from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications import InceptionV3, InceptionResNetV2, ResNet50, VGG16
 from tensorflow.keras.applications.vgg16 import preprocess_input
 
+def build_model(model_name, pooltype='max'):
+    if model_name == 'VGG16':
+        model = VGG16(weights='imagenet', pooling=pooltype, include_top=False)    
+    elif model_name == 'InceptionV3':
+        model = InceptionV3(weights='imagenet', pooling=pooltype, include_top=False)
+    elif model_name == 'InceptionResNetV2':
+        model = InceptionResNetV2(weights='imagenet', pooling=pooltype, include_top=False)
+    elif model_name == 'ResNet50':
+        model = ResNet50(weights='imagenet', pooling=pooltype, include_top=False)
+    else:
+        raise ValueError(f'Model {model_name} not supported.')
 
-def extract_features(img_path, model):
-    img = image.load_img(img_path, target_size=(224, 224))
+    target_size = 299 if model_name in ['InceptionV3', 'InceptionResNetV2'] else 224
+    return model, target_size
+
+def extract_features(img_path, model, target_size):
+    img = image.load_img(img_path, target_size=(target_size, target_size))  #Redimensiona a imagem
     img_array = image.img_to_array(img)
     img_array = np.expand_dims(img_array, axis=0)
     img_array = preprocess_input(img_array)
@@ -15,30 +29,27 @@ def extract_features(img_path, model):
     features = model.predict(img_array)
     return features.flatten()
 
-models = {
-    'InceptionV3': InceptionV3(weights='imagenet', include_top=False, input_shape=(512, 512, 3)),
-    'InceptionResNetV2': InceptionResNetV2(weights='imagenet', include_top=False, input_shape=(512, 512, 3)),
-    'ResNet50': ResNet50(weights='imagenet', include_top=False, input_shape=(512, 512, 3)),
-    'VGG16': VGG16(weights='imagenet', include_top=False, input_shape=(512, 512, 3)),
-}
+models_to_build = ['InceptionV3', 'InceptionResNetV2', 'ResNet50', 'VGG16']
 
-data_dir = '/home/iza/Área de Trabalho/DisciplicaICA/n2_ica/imag' 
+data_dir = '/home/izaquela/Área de Trabalho/n2_ica/src/data'
 
-for model_name, model in models.items():
+for model_name in models_to_build:
+    model, target_size = build_model(model_name)
+    
     features_list = []
     labels_list = []
 
-    classes = ['AVCH', 'normal']
+    classes = ['avch', 'normal']
     for class_name in classes:
         class_dir = os.path.join(data_dir, class_name)
 
         for img_name in os.listdir(class_dir):
             img_path = os.path.join(class_dir, img_name)
 
-            # extrai caracteristicas e adicionar a lista
-            features = extract_features(img_path, model)
-            features_list.append(features)
+            #Extrai características e adiciona à lista
+            features = extract_features(img_path, model, target_size)
             labels_list.append(f'{class_name}_{model_name}')
+            features_list.append(features)
 
     features_array = np.array(features_list)
     labels_array = np.array(labels_list)

@@ -11,3 +11,8 @@ imag
 imag/AVCH
 imag/normal
 features_and_labels.csv
+src/data/
+src/features_and_labels_InceptionResNetV2.csv
+src/features_and_labels_InceptionV3.csv
+src/features_and_labels_ResNet50.csv
+src/features_and_labels_VGG16.csv

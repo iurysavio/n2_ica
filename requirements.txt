@@ -8,3 +8,4 @@ tensorflow
 scipy
 keras
 scikit-learn
+tensorflow-cpu

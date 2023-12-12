@@ -203,7 +203,7 @@ def get_imgs_path(root_folder):
                 dicom_paths.append(nomes)
     return dicom_paths               # append only the .dcm files
 
-'''def segment_imgs(root_folder, output_folder):
+def segment_imgs(root_folder, output_folder):
 
     # Recebe os paths das imagens de entrada
     input_file_path_array = get_imgs_path(root_folder)
@@ -271,13 +271,14 @@ def get_imgs_path(root_folder):
     return dicom_img_pixel_data_array, windowed_img_hu_array, segmented_img_hu_array
 
 def main():
-    root = '/home/iza/Downloads/DATA_AVCH_SPLIT/Hemorrágico'
-    output_data_folder = '/home/iza/Área de Trabalho/n2_ica/imag'
+    root = '/home/izaquela/Área de Trabalho/n2_ica/src/data/Hemorrágico'
+    output_data_folder = '/home/izaquela/Área de Trabalho/n2_ica/AVCH'
     array_normal_original, array_normal_janelada, array_normal_segmentada = segment_imgs(root, output_data_folder)
 
 if __name__ == '__main__':
 
     main()  
+
 '''
 def save_segmented_images(input_folder, output_folder):
     # Obtém os caminhos das imagens de entrada
@@ -314,9 +315,11 @@ def save_segmented_images(input_folder, output_folder):
             print(f"Não foi possível segmentar a imagem: {file_path}")
 
 def main():
-    input_folder = '/home/iza/Downloads/DATA_AVCH_SPLIT/Normal/Normal'
-    output_folder = '/home/iza/Área de Trabalho/n2_ica/imag_normal'
+    input_folder = '/home/izaquela/Área de Trabalho/n2_ica/src/data/Normal'
+    output_folder = '/home/izaquela/Área de Trabalho/n2_ica/imag_normal'
     save_segmented_images(input_folder, output_folder)
 
 if __name__ == '__main__':
     main()
+
+'''
