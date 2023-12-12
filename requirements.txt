@@ -9,3 +9,4 @@ scipy
 keras
 scikit-learn
 tensorflow-cpu
+scikit-learn
