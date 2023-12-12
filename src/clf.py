@@ -34,16 +34,21 @@ def train_and_evaluate_classifier(clf, param_dist, n_iter_search, X_train, X_tes
             random_search = RandomizedSearchCV(clf, param_distributions=param_dist, n_iter=n_iter_search, cv=cv, n_jobs=-1)
             random_search.fit(X_train, y_train)
 
-        # melhores parâmetros
-        print(f'Classificador: {clf.__class__.__name__}')
-        print(f'Melhores Parâmetros: {random_search.best_params_}')
-        print(f'Melhor Score: {random_search.best_score_}\n')
-
-        # previsão
+        # resultados
         y_pred = random_search.predict(X_test)
-        print(f'Relatório de Classificação:\n{classification_report(y_test, y_pred)}')
-        print(f'Acurácia: {accuracy_score(y_test, y_pred)}')
-        print(f'Matriz de Confusão:\n{confusion_matrix(y_test, y_pred)}\n')
+        result = {
+            'Classificador': clf.__class__.__name__,
+            'Melhores Parâmetros': random_search.best_params_,
+            'Melhor Score': random_search.best_score_,
+            'Relatório de Classificação': classification_report(y_test, y_pred),
+            'Acurácia': accuracy_score(y_test, y_pred),
+            'Matriz de Confusão': confusion_matrix(y_test, y_pred)
+        }
+
+        return result
+
+# Melhores resultados
+best_results = {}
 
 csv_files = ['features_and_labels_InceptionResNetV2.csv', 'features_and_labels_InceptionV3.csv',
              'features_and_labels_ResNet50.csv', 'features_and_labels_VGG16.csv']
@@ -68,9 +73,9 @@ for csv_file in csv_files:
         'MLP': MLPClassifier(max_iter=3000, solver='adam', learning_rate_init=5e-04),
         'Nearest_Neighbors': KNeighborsClassifier(),
         'Random_Forest': RandomForestClassifier(),
-        'SVM_Linear': SVC(kernel='linear', probability=True, max_iter=5000, tol=1e-5),
-        'SVM_Polynomial': SVC(kernel='poly', probability=True, max_iter=5000, tol=1e-5),
-        'SVM_RBF': SVC(kernel='rbf', probability=True, max_iter=5000, tol=1e-5)
+        'SVM_Linear': SVC(kernel='linear', probability=True, max_iter=5000, tol=1e-6),
+        'SVM_Polynomial': SVC(kernel='poly', probability=True, max_iter=5000, tol=1e-6),
+        'SVM_RBF': SVC(kernel='rbf', probability=True, max_iter=5000, tol=1e-6)
     }
 
     # parametros e distribuições para classificadores
@@ -92,6 +97,7 @@ for csv_file in csv_files:
 
     for clf_name, clf in classifiers.items():
         param_dist = param_distributions[clf_name]
+
         if clf_name.startswith('SVM'):
             scaler = MinMaxScaler()
             X_train_scaled = scaler.fit_transform(X_train)
@@ -100,4 +106,16 @@ for csv_file in csv_files:
         else:
             X_train_pca, X_test_pca = apply_pca(X_train, X_test)
 
-        train_and_evaluate_classifier(clf, param_dist, n_iter_search, X_train_pca, X_test_pca, y_train, y_test)
+        result = train_and_evaluate_classifier(clf, param_dist, n_iter_search, X_train_pca, X_test_pca, y_train, y_test)
+
+        # Armazenar os resultados para impressão
+        best_results[(csv_file, clf_name)] = result
+
+# Imprimir os melhores resultados
+for key, result in sorted(best_results.items(), key=lambda x: x[0][0]):
+    print(f'\nArquivo: {key[0]}, Classificador: {key[1]}')
+    print(f'Melhores Parâmetros: {result["Melhores Parâmetros"]}')
+    print(f'Melhor Score: {result["Melhor Score"]}\n')
+    print(f'Relatório de Classificação:\n{result["Relatório de Classificação"]}')
+    print(f'Acurácia: {result["Acurácia"]}')
+    print(f'Matriz de Confusão:\n{result["Matriz de Confusão"]}\n')
