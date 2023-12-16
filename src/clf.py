@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.decomposition import PCA
-from sklearn.preprocessing import LabelEncoder, StandardScaler, MinMaxScaler
+from sklearn.preprocessing import LabelEncoder, MinMaxScaler
 from sklearn.model_selection import train_test_split, RandomizedSearchCV
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -12,6 +12,7 @@ from sklearn.metrics import classification_report, accuracy_score, confusion_mat
 from scipy.stats import randint as sp_randint
 from sklearn.exceptions import ConvergenceWarning
 import warnings
+import time
 
 def apply_pca(X_train, X_test, min_explained_variance=0.95):
     pca = PCA()
@@ -30,29 +31,40 @@ def train_and_evaluate_classifier(clf, param_dist, n_iter_search, X_train, X_tes
     if n_iter_search > 0:
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=ConvergenceWarning)
+            
+            # Realiza o GridSearchCV e mede o tempo
+            start_time_gridsearch = time.time()
             random_search = RandomizedSearchCV(clf, param_distributions=param_dist, n_iter=n_iter_search, cv=cv, n_jobs=-1)
             random_search.fit(X_train, y_train)
-
-        # resultados
-        y_pred = random_search.predict(X_test)
-        result = {
-            'Classificador': clf.__class__.__name__,
-            'Melhores Parâmetros': random_search.best_params_,
-            'Melhor Score': random_search.best_score_,
-            'Relatório de Classificação': classification_report(y_test, y_pred),
-            'Acurácia': accuracy_score(y_test, y_pred),
-            'Matriz de Confusão': confusion_matrix(y_test, y_pred)
-        }
-
+            end_time_gridsearch = time.time()
+            elapsed_time_gridsearch = end_time_gridsearch - start_time_gridsearch
+            
+            # Treinamento do classificador usando os melhores parâmetros encontrados
+            start_time_training = time.time()
+            clf.set_params(**random_search.best_params_)
+            clf.fit(X_train, y_train)
+            end_time_training = time.time()
+            elapsed_time_training = end_time_training - start_time_training
+            
+            # Resultados
+            y_pred = clf.predict(X_test)
+            result = {
+                'Classificador': clf.__class__.__name__,
+                'Melhores Parâmetros': random_search.best_params_,
+                'Relatório de Classificação': classification_report(y_test, y_pred),
+                'Acurácia': accuracy_score(y_test, y_pred),
+                'Matriz de Confusão': confusion_matrix(y_test, y_pred),
+                'Tempo de Treinamento (s)': elapsed_time_training
+            }
         return result
 
-# melhores resultados
-best_results = {}
+# Resultados
+all_results = []
 
 csv_files = ['features_and_labels_InceptionResNetV2.csv', 'features_and_labels_InceptionV3.csv',
              'features_and_labels_ResNet50.csv', 'features_and_labels_VGG16.csv']
 
-# numero de folds para validação cruzada
+# Número de folds para validação cruzada
 cv = 5
 n_iter_search = 5
 
@@ -66,7 +78,7 @@ for csv_file in csv_files:
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4, random_state=42)
 
-    # inicializando os classificadores
+    # Inicializando os classificadores
     classifiers = {
         'Bayes': GaussianNB(),
         'MLP': MLPClassifier(max_iter=3000, solver='adam', learning_rate_init=5e-04),
@@ -77,7 +89,7 @@ for csv_file in csv_files:
         'SVM_RBF': SVC(kernel='rbf', probability=True, max_iter=5000, tol=1e-6)
     }
 
-    # parametros e distribuições para classificadores
+    # Parâmetros e distribuições para classificadores
     param_distributions = {
         'Bayes': {},
         'MLP': {"hidden_layer_sizes": list(np.arange(2, 1001))},
@@ -107,14 +119,24 @@ for csv_file in csv_files:
 
         result = train_and_evaluate_classifier(clf, param_dist, n_iter_search, X_train_pca, X_test_pca, y_train, y_test)
 
-        # armazenar os resultados para impressão
-        best_results[(csv_file, clf_name)] = result
+        # Armazena os resultados para impressão
+        all_results.append((csv_file, clf_name, result))
 
-# imprimir os melhores resultados
-for key, result in sorted(best_results.items(), key=lambda x: x[0][0]):
-    print(f'\nArquivo: {key[0]}, Classificador: {key[1]}')
-    print(f'Melhores Parâmetros: {result["Melhores Parâmetros"]}')
-    print(f'Melhor Score: {result["Melhor Score"]}\n')
-    print(f'Relatório de Classificação:\n{result["Relatório de Classificação"]}')
-    print(f'Acurácia: {result["Acurácia"]}')
-    print(f'Matriz de Confusão:\n{result["Matriz de Confusão"]}\n')
+# Imprimir todas as métricas relevantes
+for result in all_results:
+    print(f'\nArquivo: {result[0]}, Classificador: {result[1]}')
+    print(f'Melhores Parâmetros: {result[2]["Melhores Parâmetros"]}')
+    
+    # Extrai métricas de precisão, sensibilidade e acurácia
+    precision = result[2]["Relatório de Classificação"].split('\n')[2].split()[1]
+    recall = result[2]["Relatório de Classificação"].split('\n')[2].split()[2]
+    accuracy = result[2]["Acurácia"]
+    
+    print(f'Acurácia: {accuracy}')
+    print(f'Precisão: {precision}')
+    print(f'Sensibilidade: {recall}')
+    
+    # Imprime a matriz de confusão
+    print(f'Matriz de Confusão:\n{result[2]["Matriz de Confusão"]}')
+    
+    print(f'Tempo de Treinamento (s): {result[2]["Tempo de Treinamento (s)"]}\n')
